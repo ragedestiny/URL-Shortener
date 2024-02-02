@@ -11,7 +11,7 @@ class TestAPI(unittest.TestCase):
     def test_longUrl(self):
         # error if long URL not valid        
         with self.assertRaises(Exception) as missingbase:
-            schemas.longURL(long_Url='www.yahoo.com')
+            schemas.longURL(url='www.yahoo.com')
         self.assertTrue('relative URL without a base' in str(missingbase.exception))
 
 
