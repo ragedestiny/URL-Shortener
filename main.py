@@ -1,6 +1,4 @@
 from dotenv import load_dotenv
-import boto3
-
 
 from models.schemas import validateLongUrl, validateShortUrl
 from api.api_handlers import toShorten
