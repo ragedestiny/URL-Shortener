@@ -1,5 +1,6 @@
 import boto3
 
+# Table Model for mock table creation
 def create_url_table(dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url='http://127.0.0.1:8000')
@@ -19,8 +20,8 @@ def create_url_table(dynamodb=None):
             },
         ],
         ProvisionedThroughput={
-            'ReadCapacityUnits': 1,
-            'WriteCapacityUnits': 1
+            'ReadCapacityUnits': 5,
+            'WriteCapacityUnits': 5
         }
     )
 

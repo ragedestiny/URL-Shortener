@@ -3,7 +3,6 @@ from fastapi.responses import RedirectResponse
 from typing import Optional
 
 from models import schemas
-from models.testurls import urlMap
 from service.idgenerator import randomID
 from models.database import Urls
 
