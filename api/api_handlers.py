@@ -45,14 +45,13 @@ def toShorten(long_url: schemas.longURL, shorturl: Optional[schemas.shortURL] = 
     # when no short url given, generate one
     if shorturl == None:
         shorturl = randomID()
-        result = { each for each in Urls.query(shorturl)}
-        while len(result) != 0: # check and keep generating if there is a collision
+        while any(Urls.query(shorturl)):
+            # generate new random ID if it exists in database
             shorturl = randomID()
-            result = { each for each in Urls.query(shorturl)}
         shorturl = schemas.shortURL(short_Url=shorturl)
     
     # if short url is in database, send error
-    for _ in Urls.query(shorturl.short_Url):
+    if any(Urls.query(shorturl.short_Url)):
         raise HTTPException(status_code=400, detail=f"Short url {shorturl.short_Url} already exist, try another one.")
     
     # create url pair and save to database
@@ -76,8 +75,15 @@ def getLongUrl(shorturl: str):
     Returns:
         _type_: redirects to long url if url short is valid
     """
-    for found in Urls.query(shorturl): # check to see if short URL exist in our data
-        return RedirectResponse(found.long_url)
     
-    raise HTTPException(status_code=400, detail=f"Short URL of {shorturl} doesn't exist.")
+    # retrieve shorturl pair from database
+    result = list(Urls.query(shorturl))
+    
+    # check to see if short URL exist in our data
+    if not any(result):
+        raise HTTPException(status_code=400, detail=f"Short URL of {shorturl} doesn't exist.")
+    
+    # redirect to page if short url does exist    
+    return RedirectResponse(result[0].long_url)
+    
     
