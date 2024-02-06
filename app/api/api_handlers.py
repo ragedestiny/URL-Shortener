@@ -2,9 +2,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from typing import Optional
 
-from models import schemas
-from service.idgenerator import randomID
-from models.database import Urls
+from app.models import schemas
+from app.service.idgenerator import randomID
+from app.models.database import Urls
 
 app = FastAPI()
 

@@ -11,8 +11,8 @@ import boto3
 from moto import mock_aws
 from fastapi import HTTPException
 
-import api_handlers
-from models.schemas import longURL, shortURL
+from app.api import api_handlers
+from app.models.schemas import longURL, shortURL
 
 @mock_aws
 class TestAPI(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestAPI(unittest.TestCase):
         self.dynamodb = boto3.resource('dynamodb', region_name = 'us-east-1')
         
         # create table using Url Model
-        from models.test_table import create_url_table
+        from tests.test_table import create_url_table
         self.table = create_url_table(self.dynamodb)
         # add two dummy url pairs to mock database
         dummy_data = [

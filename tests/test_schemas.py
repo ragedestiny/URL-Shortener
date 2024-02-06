@@ -4,7 +4,7 @@ DIR = os.path.dirname(os.path.dirname(__file__))  # The repo root directory
 sys.path.append(DIR)  # Temporarily add the repo root to sys.path so the 'src' module can be imported
 
 import unittest
-import schemas
+from app.models import schemas
 
 class TestAPI(unittest.TestCase):
 
