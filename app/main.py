@@ -1,3 +1,6 @@
+import sys
+sys.path.append('E:\\Projects\\url-shortener\\URL-Shortener')
+
 from dotenv import load_dotenv
 
 from models.schemas import validateLongUrl, validateShortUrl
