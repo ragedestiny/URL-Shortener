@@ -37,4 +37,5 @@ jobs:
         script: |
           docker stop fastapi || true
           docker rm fastapi || true
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/url-shortener:latest
           sudo docker run -d --name fastapi -p 80:8000  ${{ secrets.DOCKERHUB_USERNAME }}/url-shortener:latest
