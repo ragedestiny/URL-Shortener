@@ -36,7 +36,45 @@ class TestAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             schemas.shortURL(short_Url=notallowcharUrl)
         
-
+        
+    def test_email(self):
+        # error if not valid user email
+        with self.assertRaises(Exception) as missingdotcom:
+            schemas.Email(email='testing@gmail')
+        self.assertTrue('not a valid email address' in str(missingdotcom.exception))
+    
+    
+    def test_password(self):
+        validPW = '09fwfiojwOFISJDF2398f'
+        spaceinPW = 'OIWEJFso idjf98'
+        tooshortPW = 'sd0Ssa'
+        nolowercasePW = 'OSFJOJWEF09FS'
+        nouppercasePW = 'sdfoijwef82374ws'
+        nodigitPW = 'osdfjioWFIODFSJD'
+        
+        # test a valid PW
+        self.assertEqual(schemas.Password(password=validPW).password, validPW)
+        
+        # user input password has blank space
+        with self.assertRaises(ValueError):
+            schemas.Password(password=spaceinPW)
+        
+        # user input password less than 8 characters
+        with self.assertRaises(ValueError):
+            schemas.Password(password=tooshortPW)
+            
+        # user input password contain no lowercase letters
+        with self.assertRaises(ValueError):
+            schemas.Password(password=nolowercasePW)
+            
+        # user input password contain no uppercase letters
+        with self.assertRaises(ValueError):
+            schemas.Password(password=nouppercasePW)
+            
+        # user input password contain no digit number 
+        with self.assertRaises(ValueError):
+            schemas.Password(password=nodigitPW)
+       
         
 if __name__ == '__main__':
     unittest.main()

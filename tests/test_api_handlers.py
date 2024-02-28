@@ -12,7 +12,8 @@ from moto import mock_aws
 from fastapi import HTTPException
 
 from app.api import api_handlers
-from app.models.schemas import longURL, shortURL
+from app.models.schemas import longURL, shortURL, Email, Password
+
 
 @mock_aws
 class TestAPI(unittest.TestCase):
@@ -23,27 +24,55 @@ class TestAPI(unittest.TestCase):
         
         # create table using Url Model
         from tests.test_table import create_url_table
-        self.table = create_url_table(self.dynamodb)
+        self.urltable = create_url_table(self.dynamodb)
         # add two dummy url pairs to mock database
-        dummy_data = [
+        dummy_url_data = [
             {"short_url": "short_url_1", "long_url": "http://example1.com"},
             {"short_url": "short_url_2", "long_url": "http://example2.com"}
         ]
-        with self.table.batch_writer() as batch:
-            for data in dummy_data:
+        with self.urltable.batch_writer() as batch:
+            for data in dummy_url_data:
+                batch.put_item(Item=data)
+                
+        # create table using User Model
+        from tests.test_table import create_user_table
+        self.usertable = create_user_table(self.dynamodb)
+        # add two dummy users (one regular and one admin) to mock database
+        dummy_user_data = [
+            {
+                "email": "regularuser@gmail.com",
+                "password_hash": "Password1",
+                "is_admin": False,
+                "url_limit": 20,
+                "urls": ["short_url_1", "short_url_2"]
+            },
+            {
+                "email": "adminuser@gmail.com",
+                "password_hash": "Password2",
+                "is_admin": True,
+                "url_limit": 20,
+                "urls": []
+            }
+        ]
+        with self.usertable.batch_writer() as batch:
+            for data in dummy_user_data:
                 batch.put_item(Item=data)
         
         
     def tearDown(self) -> None:
         # tear down the mock table
-        self.table.delete()
+        self.urltable.delete()
+        self.usertable.delete()
         self.dynamodb = None
                
         
     def test_table_exists(self):
-        # Test to see mock table created and name matches
-        self.assertTrue(self.table)
-        self.assertIn('Short_URL-to-Long_URL', self.table.name)
+        # Test to see mock tables created and name matches
+        self.assertTrue(self.urltable)
+        self.assertIn('Short_URL-to-Long_URL', self.urltable.name)
+        
+        self.assertTrue(self.usertable)
+        self.assertIn('Users-table', self.usertable.name)
     
     
     def test_get_root(self):
@@ -94,6 +123,22 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(error.exception.status_code, 400)
         self.assertEqual(error.exception.detail, f"Short URL of {NotexistshortURL} doesn't exist.")
         
+        
+    def test_create_user(self):
+        test_valid_email = Email(email="testing@gmail.com")
+        test_valid_password = Password(password="9weJOWIEFj9wef")
+        test_exist_email = Email(email="regularuser@gmail.com")
+        
+        # test if valid email and password are entered
+        result = api_handlers.create_user(user_email=test_valid_email, user_password=test_valid_password)
+        self.assertIsInstance(result, dict)
+        self.assertIn('created successfully', result["message"])
+        
+        #test with an email that already exist
+        with self.assertRaises(HTTPException) as error:
+            api_handlers.create_user(user_email=test_exist_email, user_password=test_valid_password)
+        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(error.exception.detail, f"Email of {test_exist_email.email} already exist, try another one.")
         
         
 if __name__ == '__main__':
