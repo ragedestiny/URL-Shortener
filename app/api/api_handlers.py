@@ -1,10 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from typing import Optional
+from pydantic import ValidationError
 
 from app.models import schemas
 from app.service.idgenerator import randomID
-from app.models.database import Urls
+from app.service.pwhashing import hash_password
+from app.models.database import Urls, Users
+
 
 app = FastAPI()
 
@@ -87,3 +90,30 @@ def getLongUrl(shorturl: str):
     return RedirectResponse(result[0].long_url)
     
     
+@app.post('/create_user')
+def create_user(user_email: schemas.Email, user_password: schemas.Password) -> dict:
+    """New User enters email and password to create an account, sends post request to server to add user to database
+
+    Args:
+        email (str): Email as user account name
+        password (str): password will be hashed
+
+    Raises:
+        HTTPException: Any validation errors for email and password, email has already been registered
+
+    Returns:
+        dict: Account successfully registered
+    """
+
+    # check to see email already exists
+    if any(Users.query(user_email.email)):
+        raise HTTPException(status_code=400, detail=f"Email of {user_email.email} already exist, try another one.")
+    
+    # hash pass with bcrypt
+    hashedPW = hash_password(password=user_password.password)
+    
+    # create new account and save to database
+    new_user = Users(email=user_email.email, password_hash=hashedPW)
+    new_user.save()
+    
+    return {"message": f"Account of {user_email.email} created successfully."}

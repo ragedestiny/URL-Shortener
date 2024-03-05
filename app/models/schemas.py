@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, field_validator, ValidationError
+from pydantic import BaseModel, HttpUrl, EmailStr, field_validator, ValidationError
 import re
 
 class longURL(BaseModel):
@@ -19,6 +19,36 @@ class shortURL(BaseModel):
             raise ValueError(f"shortUrl must only contains letters, nummbers, underscores and dashes.")
         return s
     
+class Email(BaseModel):
+    # email must be a valid email
+    email: EmailStr
+
+
+class Password(BaseModel):
+    password: str
+    
+    @field_validator('password')
+    def check_password(cls, value):
+        # convert the password to a string if it is not already
+        value = str(value)
+        # check for blank spaces
+        if " " in value:
+            raise ValueError("Password cannot contain blank spaces.")
+        # check that the password has at least 8 characters
+        if len(value) < 8:
+            raise ValueError("Password must have at least 8 characters.")
+        # check if password has at least one uppercase letter
+        if not any(c.isupper() for c in value):
+            raise ValueError("Password must have at least one uppercase letter.")
+        # check if password has at least one lowercase letter
+        if not any(c.islower() for c in value):
+            raise ValueError("Password must have at least one lowercase letter.")
+        # check if password has at least one digit
+        if not any(c.isdigit() for c in value):
+            raise ValueError("Password must have at least one digit.")
+        
+        return value
+
 # used to valid user inputs later
 def validateLongUrl(url):
     try:
@@ -37,3 +67,18 @@ def validateShortUrl(url):
         return short_url
     except ValidationError as e:
         print(e)
+        
+        
+def validateEmail(email):
+    try:
+        new_email = Email(email=email)
+        return new_email
+    except ValidationError as e:
+        raise ValueError(str(e))
+    
+def validatePassword(password):
+    try:
+        new_password = Password(password=password)
+        return new_password
+    except ValidationError as e:
+        raise ValueError(str(e))

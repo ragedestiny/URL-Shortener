@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from pynamodb.models import Model
-from pynamodb.attributes import (UnicodeAttribute)
+from pynamodb.attributes import UnicodeAttribute, BooleanAttribute, ListAttribute, NumberAttribute
 
 # load environment variables from .env
 load_dotenv()
@@ -23,3 +23,16 @@ class Urls(Model):
         
     short_url = UnicodeAttribute(hash_key=True)
     long_url = UnicodeAttribute()
+    creator_email = UnicodeAttribute(default='')
+
+
+class Users(Model):
+    class Meta:
+        table_name = "Users-table"
+        region = aws_region 
+
+    email = UnicodeAttribute(hash_key=True)
+    password_hash = UnicodeAttribute()
+    is_admin = BooleanAttribute(default=False)
+    url_limit = NumberAttribute(default=20)
+    urls = ListAttribute(default=list)  # Store the short urls created by user
