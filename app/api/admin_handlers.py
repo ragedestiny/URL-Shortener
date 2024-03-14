@@ -13,7 +13,7 @@ router = APIRouter()
 
 # grab all url pairs
 @router.get("/list_urls")
-def get_all_urls(current_user: Users = Depends(get_current_user)):
+async def get_all_urls(current_user: Users = Depends(get_current_user)):
     """
     Get request to retrieve all short url to long url pairs
     
@@ -32,7 +32,7 @@ def get_all_urls(current_user: Users = Depends(get_current_user)):
 
 
 @router.patch("/update_url_limit")
-def update_url_limit(
+async def update_url_limit(
     user_email: str,
     new_limit: int,
     current_user: Users = Depends(get_current_user)

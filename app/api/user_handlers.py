@@ -10,7 +10,7 @@ from app.auth.auth import authenticate_user, create_access_token, get_current_us
 router = APIRouter()
 
 @router.post('/create_user')
-def create_user(user_email: schemas.Email, user_password: schemas.Password) -> dict:
+async def create_user(user_email: schemas.Email, user_password: schemas.Password) -> dict:
     """New User enters email and password to create an account, sends post request to server to add user to database
 
     Args:
@@ -39,7 +39,7 @@ def create_user(user_email: schemas.Email, user_password: schemas.Password) -> d
 
 
 @router.post("/login")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Authenticate a user with provided credentials and generate an access token.
 
@@ -64,7 +64,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.get("/list_my_urls")
-def list_my_urls(current_user: Users = Depends(get_current_user)):
+async def list_my_urls(current_user: Users = Depends(get_current_user)):
     """
     Endpoint to list URLs associated with the current authenticated user.
 
@@ -86,7 +86,7 @@ def list_my_urls(current_user: Users = Depends(get_current_user)):
 
 
 @router.patch("/change_password")
-def change_password(password: str, current_user: Users = Depends(get_current_user)):
+async def change_password(password: str, current_user: Users = Depends(get_current_user)):
     """
     Change the password for the current user.
 
