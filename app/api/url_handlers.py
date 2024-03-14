@@ -19,7 +19,7 @@ def test():
 
 # request body should include long url to shorten and an optional short url
 @router.post("/shorten_url")
-async def to_shorten(
+def to_shorten(
     long_url: schemas.longURL,
     current_user: Users = Depends(get_current_user),
     short_url: Optional[schemas.shortURL] = None
@@ -74,7 +74,7 @@ async def to_shorten(
 
 # url parems for redirect to long URL
 @router.get("/redirect/{shorturl}")
-async def getLongUrl(shorturl: str):
+def getLongUrl(shorturl: str):
     """Using the shorturl parems, find short url in database then redirect to long url if found.
 
     Args:

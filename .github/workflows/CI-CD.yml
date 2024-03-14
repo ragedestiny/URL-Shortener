@@ -40,5 +40,6 @@ jobs:
               -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
               -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
               -e ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }} \
+              -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
               -e HASH_ALGORITHM=${{ secrets.HASH_ALGORITHM }} \
               ${{ secrets.DOCKERHUB_USERNAME }}/url-shortener:latest
