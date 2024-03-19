@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi import HTTPException
 from typing import Optional
+from pydantic import ValidationError
 
 from app.models import schemas
 from app.service.idgenerator import randomID
@@ -98,3 +99,27 @@ def getLongUrl(shorturl: str):
     return RedirectResponse(result[0].long_url)
 
 
+
+@router.get("/lookupURL")
+def lookupLongUrl(shorturl: str):
+    """Find short url in database then return long url if found.
+
+    Args:
+        short_URL (str): short url
+
+    Raises:
+        HTTPException: short url is not in our database, return error
+
+    Returns:
+        _type_: long url
+    """
+    
+    # Retrieve short URL pair from the database
+    result = list(Urls.query(shorturl))
+    
+    # Check if the short URL exists in the database
+    if not any(result):
+        raise HTTPException(status_code=400, detail=f"Short URL '{shorturl}' doesn't exist.")
+    
+    # Return the long URL
+    return {"long_url": result[0].long_url}

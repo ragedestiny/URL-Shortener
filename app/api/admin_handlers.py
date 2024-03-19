@@ -33,7 +33,7 @@ def get_all_urls(current_user: Users = Depends(get_current_user)):
 
 @router.patch("/update_url_limit")
 def update_url_limit(
-    user_email: str,
+    user_email: schemas.Email,
     new_limit: int,
     current_user: Users = Depends(get_current_user)
 ):
@@ -54,16 +54,10 @@ def update_url_limit(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Only admin users can update URL limits.")
     
-    # Validate email entered
-    try:
-        valid_user_email = schemas.Email(email=user_email)
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
     
     # Retrieve the user from the database
     try:
-        user = Users.get(valid_user_email.email)
+        user = Users.get(user_email.email)
     except DoesNotExist:
         user = None
     if not user:

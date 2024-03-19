@@ -15,6 +15,7 @@ from app.api import url_handlers, admin_handlers, user_handlers
 from app.models.schemas import longURL, shortURL, Email, Password
 from app.service.pwhashing import hash_password
 from app.auth.auth import authenticate_user
+from app.models import schemas
 
 @mock_aws
 class TestAPI(unittest.TestCase):
@@ -162,8 +163,7 @@ class TestUserAPI(TestAPI):
         
         
     def test_change_password(self):
-        valid_new_password = "Password3"
-        invalid_new_password = "password4"
+        valid_new_password = schemas.Password(password="Password3")
         
         # Negative test with invalid user, access denied
         with self.assertRaises(HTTPException) as error:
@@ -171,12 +171,7 @@ class TestUserAPI(TestAPI):
         self.assertEqual(error.exception.status_code, 401)
         self.assertEqual(error.exception.detail, "Authentication required to access this endpoint.")
     
-        # Negative test with valid user but invalid new password
-        with self.assertRaises(HTTPException) as error:
-            user_handlers.change_password(password=invalid_new_password,  current_user=self.regular_user)
-        self.assertEqual(error.exception.status_code, 400)
-        self.assertIn("Password must have at least one uppercase letter.", error.exception.detail)
-    
+
         # Positive test with valid user and valid password
         self.assertEqual(user_handlers.change_password(password=valid_new_password, current_user=self.regular_user), {"message": "Password changed successfully"})    
         
@@ -202,10 +197,9 @@ class TestAdminAPI(TestAPI):
 
     def test_update_url_limit(self):
         # Dummy test variables
-        regular_user_email = self.regular_user.email
-        admin_user_email = self.admin_user.email
-        nonexist_email = "notexisting@gmail.com"
-        not_valid_email = "notvalid.com"
+        regular_user_email = schemas.Email(email=self.regular_user.email)
+        admin_user_email = schemas.Email(email=self.admin_user.email)
+        nonexist_email = schemas.Email(email="notexisting@gmail.com")
         valid_url_limit = 3
         not_valid_limit = 0
         
@@ -220,11 +214,6 @@ class TestAdminAPI(TestAPI):
             admin_handlers.update_url_limit(user_email=nonexist_email, new_limit=valid_url_limit, current_user=self.admin_user)
         self.assertEqual(error.exception.status_code, 404)
         self.assertEqual(error.exception.detail, f"User with email {nonexist_email} not found.")
-        
-        # Negative test with admin credential but not valid email
-        with self.assertRaises(HTTPException) as error:
-            admin_handlers.update_url_limit(user_email=not_valid_email, new_limit=valid_url_limit, current_user=self.admin_user)
-        self.assertEqual(error.exception.status_code, 400)
         
         # Negative test with admin credential but new url limit greater than current created urls for target user
         with self.assertRaises(HTTPException) as error:
@@ -291,6 +280,22 @@ class TestUrlAPI(TestAPI):
             url_handlers.getLongUrl(NotexistshortURL)
         self.assertEqual(error.exception.status_code, 400)
         self.assertEqual(error.exception.detail, f"Short URL of {NotexistshortURL} doesn't exist.")    
+
+    def test_lookupLongUrl(self):
+        NotexistshortURL = 'Notexist'
+        existshortURL = 'short_url_1'
+        
+        # Positive test for a successful redirect
+        pos_response = {
+            "long_url": "http://example1.com"
+        }
+        self.assertEqual(url_handlers.lookupLongUrl(existshortURL), pos_response) 
+        
+        # Negative test with non existing short URL for redirect
+        with self.assertRaises(HTTPException) as error:
+            url_handlers.getLongUrl(NotexistshortURL)
+        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(error.exception.detail, f"Short URL of {NotexistshortURL} doesn't exist.")   
 
 
 if __name__ == '__main__':
