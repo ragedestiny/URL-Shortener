@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi import HTTPException
 from typing import Optional
 from pydantic import ValidationError
+from pynamodb.exceptions import DoesNotExist
 
 from app.models import schemas
 from app.service.idgenerator import randomID
@@ -67,11 +68,50 @@ def to_shorten(
     url_pair.save()
 
     # Append the new URL to the list of URLs for the current user
-    current_user.urls.append({"short_url": short_url.short_Url, "long_url": str(long_url.url)})
+    current_user.urls.append([short_url.short_Url, str(long_url.url)])
     current_user.save()
     
-    return {'short_url': short_url.short_Url}
+    return { "short_url": short_url.short_Url, "long_url": str(long_url.url) }
     
+
+@router.delete("/delete_url")
+def delete_url(
+    short_url: schemas.shortURL,
+    current_user: Users = Depends(get_current_user)
+) -> dict:
+    """
+    Delete a URL pair associated with the provided short URL.
+
+    Args:
+        short_url (str): Short URL to be deleted.
+        current_user (Users): Current logged-in user obtained from JWT token.
+
+    Raises:
+        HTTPException: If the provided short URL does not exist or does not belong to the current user.
+
+    Returns:
+        dict: Dictionary containing the result of the deletion operation.
+    """
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Authentication required to access this endpoint.")
+
+    # Check if the short URL exists and belongs to the current user
+    try:
+        url_pair = Urls.get(short_url.short_Url)
+    except DoesNotExist:
+        url_pair = None
+    if not url_pair or url_pair.creator_email != current_user.email:
+        raise HTTPException(status_code=404, detail=f"Short URL '{short_url.short_Url}' not found or does not belong to the current user.")
+    
+    # Delete the URL pair from the database
+    url_pair.delete()
+
+    # Filter out the dictionary with key
+    current_user.urls = [[shortUrl, LongUrl] for shortUrl, LongUrl in current_user.urls if shortUrl != short_url.short_Url]
+    current_user.save()
+
+    return { "message": f"Short URL '{short_url.short_Url}' deleted successfully." }
+
 
 # url parems for redirect to long URL
 @router.get("/redirect/{shorturl}")

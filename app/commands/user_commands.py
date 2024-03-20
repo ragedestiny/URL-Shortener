@@ -60,9 +60,12 @@ def list_my_urls(token: str):
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         urls = response.json()
-        typer.echo("Here is your URL list:")
-        for each_url in urls:
-            typer.echo(each_url)
+        if not urls:
+            typer.echo("Currently you have no URLs.")
+        else:
+            typer.echo("Here is your URL list:")
+            for each_url in urls:
+                typer.echo(each_url)
     else:
         typer.echo(f"Error: {response.text}")
         
@@ -141,6 +144,35 @@ def shorten_url(long_url: str, token: str, short_url: Optional[str] = None):
         typer.echo(f"Short URL: {result['short_url']}")
     else:
         typer.echo(f"Error: {response.text}")
+
+
+@user_app.command()
+def delete_url(short_url: str, token: str):
+    """
+    Delete a short URL.
+
+    Args:
+        short_url (str): Short URL to be deleted.
+        token (str): Access token for authentication.
+    """
+    # Validate short URL
+    try:
+        schemas.shortURL(short_Url=short_url)
+    except ValidationError as e:
+        typer.echo(f"Error: {str(e)}")
+        return
+    
+    url = f"{SERVER_URL}/delete_url"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {"short_Url": short_url}
+
+    response = requests.delete(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        typer.echo("Short URL deleted successfully.")
+    else:
+        typer.echo(f"Error: {response.text}")
+
 
 
 if __name__ == "__main__":

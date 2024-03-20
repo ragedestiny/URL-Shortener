@@ -75,6 +75,16 @@ Usage:
 
 Note: The `--short_url` option is optional and can be used to specify a custom short URL.
 
+#### 5. Shorten URL
+
+This command deletes a URL created by its user.
+
+Usage:
+
+    ```bash
+    python app\main.py user delete-url <short_url> <access_token>
+    ```
+
 ### Auth
 
 The auth app provides commands for authentication-related tasks.

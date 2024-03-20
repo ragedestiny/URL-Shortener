@@ -79,8 +79,7 @@ def list_my_urls(current_user: Users = Depends(get_current_user)):
         raise HTTPException(status_code=401, detail="Authentication required to access this endpoint.")
     
     # Get the URLs associated with the user
-    user_urls = current_user.urls
-    
+    user_urls = [{ "short_url": shortUrl, "long_url": longUrl } for shortUrl, longUrl in current_user.urls]
     return user_urls
         
 

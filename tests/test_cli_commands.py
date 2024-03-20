@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 
 from app.commands.auth_commands import login
 from app.commands.admin_commands import list_all_urls, update_url_limit
-from app.commands.user_commands import list_my_urls, shorten_url, create_user, change_password
+from app.commands.user_commands import list_my_urls, shorten_url, create_user, change_password, delete_url
 from app.commands.url_commands import lookup_url
 
 class TestAuthCLI(unittest.TestCase):
@@ -350,6 +350,66 @@ class TestUserCLIs(unittest.TestCase):
 
         # Check if the error message is echoed
         mock_echo.assert_called_once_with("Error: Internal Server Error")
+        
+    @patch("app.commands.user_commands.typer.echo")
+    @patch("app.commands.user_commands.requests.delete")
+    def test_delete_url_successful(self, mock_delete, mock_echo):
+        # Mock successful response from the requests.delete method
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "Short URL deleted successfully."
+        mock_delete.return_value = mock_response
+
+        # Call the delete_url function with valid parameters
+        delete_url("test_short_url", "mocked_access_token")
+
+        # Check if the success message is echoed
+        mock_echo.assert_called_once_with("Short URL deleted successfully.")
+
+    @patch("app.commands.user_commands.typer.echo")
+    @patch("app.commands.user_commands.requests.delete")
+    def test_delete_url_invalid_short_url(self, mock_delete, mock_echo):
+        # Mock response for invalid short URL
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.text = "Short URL 'test_short_url' not found or does not belong to the current user."
+        mock_delete.return_value = mock_response
+
+        # Call the delete_url function with an invalid short URL
+        delete_url("invalid_url", "mocked_access_token")
+
+        # Check if the error message is echoed
+        mock_echo.assert_called_once_with("Error: Short URL 'test_short_url' not found or does not belong to the current user.")
+
+    @patch("app.commands.user_commands.typer.echo")
+    @patch("app.commands.user_commands.requests.delete")
+    def test_delete_url_unauthorized(self, mock_delete, mock_echo):
+        # Mock response for unauthorized token
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.text = "Authentication required to access this endpoint."
+        mock_delete.return_value = mock_response
+
+        # Call the delete_url function with an unauthorized token
+        delete_url("test_short_url", "invalid_token")
+
+        # Check if the error message is echoed
+        mock_echo.assert_called_once_with("Error: Authentication required to access this endpoint.")
+
+    @patch("app.commands.user_commands.typer.echo")
+    @patch("app.commands.user_commands.requests.delete")
+    def test_delete_url_server_error(self, mock_delete, mock_echo):
+        # Mock response for server error
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "Internal Server Error"
+        mock_delete.return_value = mock_response
+
+        # Call the delete_url function
+        delete_url("test_short_url", "valid_token")
+
+        # Check if the error message is echoed
+        mock_echo.assert_called_once_with("Error: Internal Server Error")  
     
     
 class TestUrlCLI(unittest.TestCase):
@@ -414,7 +474,8 @@ class TestUrlCLI(unittest.TestCase):
         lookup_url("valid_short_url")
 
         # Check if the error message is echoed
-        mock_echo.assert_called_once_with("Error: Internal Server Error")   
+        mock_echo.assert_called_once_with("Error: Internal Server Error") 
+        
     
 if __name__ == "__main__":
     unittest.main()
