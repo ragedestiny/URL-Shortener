@@ -75,7 +75,7 @@ Usage:
 
 Note: The `--short_url` option is optional and can be used to specify a custom short URL.
 
-#### 5. Shorten URL
+#### 5. Delete URL
 
 This command deletes a URL created by its user.
 
