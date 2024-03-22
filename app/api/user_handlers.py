@@ -79,14 +79,13 @@ def list_my_urls(current_user: Users = Depends(get_current_user)):
         raise HTTPException(status_code=401, detail="Authentication required to access this endpoint.")
     
     # Get the URLs associated with the user
-    user_urls = current_user.urls
-    
+    user_urls = [{ "short_url": shortUrl, "long_url": longUrl } for shortUrl, longUrl in current_user.urls]
     return user_urls
         
 
 
 @router.patch("/change_password")
-def change_password(password: str, current_user: Users = Depends(get_current_user)):
+def change_password(password: schemas.Password, current_user: Users = Depends(get_current_user)):
     """
     Change the password for the current user.
 
@@ -101,15 +100,9 @@ def change_password(password: str, current_user: Users = Depends(get_current_use
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication required to access this endpoint.")
     
-    # Validate the password using the Password model
-    try:
-        new_password = schemas.Password(password=password)
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
     
     # Update the user's password in the database
-    hashed_password = hash_password(new_password.password)
+    hashed_password = hash_password(password.password)
     current_user.password_hash = hashed_password
     current_user.save()
     return {"message": "Password changed successfully"}

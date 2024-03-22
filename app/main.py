@@ -1,18 +1,19 @@
 import sys
 sys.path.append('E:\\Projects\\url-shortener\\URL-Shortener')
+import typer
 
-from dotenv import load_dotenv
-
-from models.schemas import validateLongUrl, validateShortUrl
-from api.api_handlers import toShorten
-
-load_dotenv()
+from commands.auth_commands import auth_app
+from commands.admin_commands import admin_app
+from commands.user_commands import user_app
+from commands.url_commands import url_app
 
 
-print('Enter a url to shorten:')
-longurl = validateLongUrl(input())
+app = typer.Typer()
 
-print('Enter a short url (leave blank if not specified):')
-shorturl = validateShortUrl(input())
+app.add_typer(auth_app, name='auth')
+app.add_typer(user_app, name='user')
+app.add_typer(admin_app, name='admin')
+app.add_typer(url_app, name="url")
 
-toShorten(long_url=longurl, shorturl=shorturl)
+if __name__ == "__main__":
+    app()

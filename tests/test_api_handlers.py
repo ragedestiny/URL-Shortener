@@ -15,6 +15,7 @@ from app.api import url_handlers, admin_handlers, user_handlers
 from app.models.schemas import longURL, shortURL, Email, Password
 from app.service.pwhashing import hash_password
 from app.auth.auth import authenticate_user
+from app.models import schemas
 
 @mock_aws
 class TestAPI(unittest.TestCase):
@@ -60,28 +61,14 @@ class TestAPI(unittest.TestCase):
                 "password_hash": PasswordHash1,
                 "is_admin": False,
                 "url_limit": 2,
-                "urls": [
-                    {
-                        "short_url": "short_url_1", 
-                        "long_url": "http://example1.com",
-                    },
-                    {
-                        "short_url": "short_url_2", 
-                        "long_url": "http://example2.com",
-                    }
-                ]
+                "urls": [["short_url_1", "http://example1.com"], ["short_url_2", "http://example2.com"]]
             },
             {
                 "email": "adminuser@gmail.com",
                 "password_hash": PasswordHash2,
                 "is_admin": True,
                 "url_limit": 5,
-                "urls": [
-                    {
-                        "short_url": "short_url_3", 
-                        "long_url": "http://example3.com"
-                    }
-                ]
+                "urls": [["short_url_3", "http://example3.com"]]
             }
         ]
         
@@ -162,8 +149,7 @@ class TestUserAPI(TestAPI):
         
         
     def test_change_password(self):
-        valid_new_password = "Password3"
-        invalid_new_password = "password4"
+        valid_new_password = schemas.Password(password="Password3")
         
         # Negative test with invalid user, access denied
         with self.assertRaises(HTTPException) as error:
@@ -171,12 +157,7 @@ class TestUserAPI(TestAPI):
         self.assertEqual(error.exception.status_code, 401)
         self.assertEqual(error.exception.detail, "Authentication required to access this endpoint.")
     
-        # Negative test with valid user but invalid new password
-        with self.assertRaises(HTTPException) as error:
-            user_handlers.change_password(password=invalid_new_password,  current_user=self.regular_user)
-        self.assertEqual(error.exception.status_code, 400)
-        self.assertIn("Password must have at least one uppercase letter.", error.exception.detail)
-    
+
         # Positive test with valid user and valid password
         self.assertEqual(user_handlers.change_password(password=valid_new_password, current_user=self.regular_user), {"message": "Password changed successfully"})    
         
@@ -202,10 +183,9 @@ class TestAdminAPI(TestAPI):
 
     def test_update_url_limit(self):
         # Dummy test variables
-        regular_user_email = self.regular_user.email
-        admin_user_email = self.admin_user.email
-        nonexist_email = "notexisting@gmail.com"
-        not_valid_email = "notvalid.com"
+        regular_user_email = schemas.Email(email=self.regular_user.email)
+        admin_user_email = schemas.Email(email=self.admin_user.email)
+        nonexist_email = schemas.Email(email="notexisting@gmail.com")
         valid_url_limit = 3
         not_valid_limit = 0
         
@@ -220,11 +200,6 @@ class TestAdminAPI(TestAPI):
             admin_handlers.update_url_limit(user_email=nonexist_email, new_limit=valid_url_limit, current_user=self.admin_user)
         self.assertEqual(error.exception.status_code, 404)
         self.assertEqual(error.exception.detail, f"User with email {nonexist_email} not found.")
-        
-        # Negative test with admin credential but not valid email
-        with self.assertRaises(HTTPException) as error:
-            admin_handlers.update_url_limit(user_email=not_valid_email, new_limit=valid_url_limit, current_user=self.admin_user)
-        self.assertEqual(error.exception.status_code, 400)
         
         # Negative test with admin credential but new url limit greater than current created urls for target user
         with self.assertRaises(HTTPException) as error:
@@ -270,13 +245,43 @@ class TestUrlAPI(TestAPI):
         self.assertEqual(error.exception.detail, f"Short URL {preexistUrl.short_Url} already exists, please try another one.")
         
         # Positive test for a valid response (valid long URL, valid non existing short URL, valid user with urls under limit)
-        self.assertEqual(url_handlers.to_shorten(long_url=longUrlwoHttp, short_url=validshortUrl, current_user=self.admin_user), { 'short_url' : validshortUrl.short_Url })
+        Pos_response = { 'short_url' : validshortUrl.short_Url, 'long_url' : str(longUrlwoHttp.url) }
+        self.assertEqual(url_handlers.to_shorten(long_url=longUrlwoHttp, short_url=validshortUrl, current_user=self.admin_user), Pos_response)
         
         # Positive test for a valid response (valid long URL, none short URL, valid user with urls under limit)
         result = url_handlers.to_shorten(long_url=longUrlwoHttp, current_user=self.admin_user)
         self.assertIsInstance(result, dict)
         self.assertIn('short_url', result)
         
+
+    def test_delete_url(self):
+        # dummy variables for testing
+        selfownUrl = shortURL(short_Url='short_url_1')
+        nonexistUrl = shortURL(short_Url='NotexistingURL')
+        NotOwnUurl = shortURL(short_Url='short_url_3')
+        
+        # Negative test with invalid user, access denied
+        with self.assertRaises(HTTPException) as error:
+            url_handlers.delete_url(short_url=selfownUrl, current_user=None)
+        self.assertEqual(error.exception.status_code, 401)
+        self.assertEqual(error.exception.detail, "Authentication required to access this endpoint.")
+
+        # Negative test with valid user but trying to delete a non-existing URL
+        with self.assertRaises(HTTPException) as error:
+            url_handlers.delete_url(short_url=nonexistUrl, current_user=self.regular_user)
+        self.assertEqual(error.exception.status_code, 404)
+        self.assertEqual(error.exception.detail, f"Short URL '{nonexistUrl.short_Url}' not found or does not belong to the current user.")
+
+        # Negative test with valid user but trying to delete a URL created by another user
+        with self.assertRaises(HTTPException) as error:
+            url_handlers.delete_url(short_url=NotOwnUurl, current_user=self.regular_user)
+        self.assertEqual(error.exception.status_code, 404)
+        self.assertEqual(error.exception.detail, f"Short URL '{NotOwnUurl.short_Url}' not found or does not belong to the current user.")
+
+        # Positive test for successfully deleting an existing URL
+        response = url_handlers.delete_url(short_url=selfownUrl, current_user=self.regular_user)
+        self.assertEqual(response, { "message": f"Short URL '{selfownUrl.short_Url}' deleted successfully." })
+
 
     def test_getLongUrl(self):
         NotexistshortURL = 'Notexist'
@@ -291,6 +296,22 @@ class TestUrlAPI(TestAPI):
             url_handlers.getLongUrl(NotexistshortURL)
         self.assertEqual(error.exception.status_code, 400)
         self.assertEqual(error.exception.detail, f"Short URL of {NotexistshortURL} doesn't exist.")    
+
+    def test_lookupLongUrl(self):
+        NotexistshortURL = 'Notexist'
+        existshortURL = 'short_url_1'
+        
+        # Positive test for a successful redirect
+        pos_response = {
+            "long_url": "http://example1.com"
+        }
+        self.assertEqual(url_handlers.lookupLongUrl(existshortURL), pos_response) 
+        
+        # Negative test with non existing short URL for redirect
+        with self.assertRaises(HTTPException) as error:
+            url_handlers.getLongUrl(NotexistshortURL)
+        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(error.exception.detail, f"Short URL of {NotexistshortURL} doesn't exist.")   
 
 
 if __name__ == '__main__':

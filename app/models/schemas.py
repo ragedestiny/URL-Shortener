@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, EmailStr, field_validator, ValidationError
+from pydantic import BaseModel, HttpUrl, EmailStr, field_validator, ValidationError, Field
 import re
 
 class longURL(BaseModel):
