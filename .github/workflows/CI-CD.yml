@@ -42,6 +42,6 @@ jobs:
               -e ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }} \
               -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
               -e HASH_ALGORITHM=${{ secrets.HASH_ALGORITHM }} \
-              -e APITALLY_CLIENT_ID=${{ secrets.APITALLY_CLIENT_ID }}
+              -e APITALLY_CLIENT_ID=${{ secrets.APITALLY_CLIENT_ID }} \
               -e PRODUCTION=${{ secrets.PRODUCTION }} \
               ${{ secrets.DOCKERHUB_USERNAME }}/url-shortener:latest
