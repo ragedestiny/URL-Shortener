@@ -1,4 +1,4 @@
-﻿annotated-types==0.6.0
+annotated-types==0.6.0
 anyio==4.2.0
 attrs==23.2.0
 aws-sam-translator==1.83.0
@@ -46,6 +46,7 @@ packaging==23.2
 passlib==1.7.4
 pathable==0.4.3
 pbr==6.0.0
+prometheus_client==0.20.0
 py-partiql-parser==0.5.0
 pyasn1==0.5.1
 pycparser==2.21
