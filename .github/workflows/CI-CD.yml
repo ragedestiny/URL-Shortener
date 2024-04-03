@@ -44,4 +44,7 @@ jobs:
               -e HASH_ALGORITHM=${{ secrets.HASH_ALGORITHM }} \
               -e APITALLY_CLIENT_ID=${{ secrets.APITALLY_CLIENT_ID }} \
               -e PRODUCTION=${{ secrets.PRODUCTION }} \
+              -e CACHE_EXPIRE_TIME=${{ secrets.CACHE_EXPIRE_TIME }} \
+              -e REDIS_SERVER=${{ secrets.REDIS_SERVER }} \
+              -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
               ${{ secrets.DOCKERHUB_USERNAME }}/url-shortener:latest

@@ -5,10 +5,13 @@ from typing import Optional
 from pydantic import ValidationError
 from pynamodb.exceptions import DoesNotExist
 
+
 from app.models import schemas
 from app.service.idgenerator import randomID
 from app.models.database import Urls, Users
 from app.auth.auth import get_current_user
+from app.service.redis_client import redis_client
+from app.service.cache_population import expiration_time
 
 
 router = APIRouter()
@@ -50,12 +53,14 @@ def to_shorten(
     if len(current_user.urls) >= current_user.url_limit:
         raise HTTPException(status_code=400, detail=f"User has reached the maximum URL limit of {current_user.url_limit} short urls.")
     
+    # Check if the short URL already exists in the cache
+    if short_url and redis_client.exists(short_url.short_Url):
+        raise HTTPException(status_code=400, detail=f"Short URL {short_url.short_Url} already exists, please try another one.")
     
     # When no short URL is given, generate one
     if short_url is None:
         short_url = randomID()
-        while any(Urls.query(short_url)):
-            # Generate new random ID if it exists in the database
+        while redis_client.exists(short_url):  # Check if the generated short URL already exists in the cache
             short_url = randomID()
         short_url = schemas.shortURL(short_Url=short_url)
     
@@ -70,6 +75,9 @@ def to_shorten(
     # Append the new URL to the list of URLs for the current user
     current_user.urls.append([short_url.short_Url, str(long_url.url)])
     current_user.save()
+    
+    # Cache the short URL with an expiration time
+    redis_client.setex(short_url.short_Url, expiration_time, str(long_url.url))
     
     return { "short_url": short_url.short_Url, "long_url": str(long_url.url) }
     
@@ -127,16 +135,28 @@ def getLongUrl(shorturl: str):
     Returns:
         _type_: redirects to long url if url short is valid
     """
+    # Check if the short URL is cached in Redis
+    long_url = redis_client.get(shorturl)
     
-    # retrieve shorturl pair from database
+    if long_url:
+        # If the short URL is cached, redirect to the corresponding long URL
+        return RedirectResponse(long_url.decode("utf-8"))
+    
+    # If the short URL is not cached, retrieve it from the database
     result = list(Urls.query(shorturl))
     
-    # check to see if short URL exist in our data
     if not any(result):
+        # If the short URL doesn't exist in the database, raise an HTTPException
         raise HTTPException(status_code=400, detail=f"Short URL of {shorturl} doesn't exist.")
     
-    # redirect to page if short url does exist    
-    return RedirectResponse(result[0].long_url)
+    # Extract the long URL from the database result
+    long_url = result[0].long_url
+    
+    # Cache the short URL to long URL mapping in Redis
+    redis_client.setex(shorturl, expiration_time, long_url)
+    
+    # Redirect to the long URL
+    return RedirectResponse(long_url)
 
 
 
@@ -154,6 +174,12 @@ def lookupLongUrl(shorturl: str):
         _type_: long url
     """
     
+    # Check if the short URL exists in the Redis cache
+    cached_long_url = redis_client.get(shorturl)
+    if cached_long_url:
+        # If the long URL is cached, return it
+        return {"long_url": cached_long_url.decode('utf-8')}
+    
     # Retrieve short URL pair from the database
     result = list(Urls.query(shorturl))
     
@@ -161,5 +187,11 @@ def lookupLongUrl(shorturl: str):
     if not any(result):
         raise HTTPException(status_code=400, detail=f"Short URL '{shorturl}' doesn't exist.")
     
+    # Get the long URL from the database result
+    long_url = result[0].long_url
+    
+    # Cache the long URL in Redis
+    redis_client.setex(shorturl, expiration_time, long_url)
+    
     # Return the long URL
-    return {"long_url": result[0].long_url}
+    return {"long_url": long_url}

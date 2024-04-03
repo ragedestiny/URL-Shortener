@@ -1,11 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import ValidationError
+import json
 
 from app.models import schemas
 from app.service.pwhashing import hash_password
 from app.models.database import Users
 from app.auth.auth import authenticate_user, create_access_token, get_current_user
+from app.service.redis_client import redis_client
+from app.service.cache_population import expiration_time
 
 router = APIRouter()
 
@@ -78,11 +81,19 @@ def list_my_urls(current_user: Users = Depends(get_current_user)):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication required to access this endpoint.")
     
-    # Get the URLs associated with the user
+    # Check if the user's URLs are cached in Redis
+    cached_urls = redis_client.get(current_user.email)
+    if cached_urls:
+        # If cached data exists, return it
+        return json.loads(cached_urls)
+    
+    # If not cached, fetch the URLs from the database
     user_urls = [{ "short_url": shortUrl, "long_url": longUrl } for shortUrl, longUrl in current_user.urls]
+    
+    # Cache the user's URLs in Redis
+    redis_client.setex(current_user.email, expiration_time, json.dumps(user_urls))
+    
     return user_urls
-        
-
 
 @router.patch("/change_password")
 def change_password(password: schemas.Password, current_user: Users = Depends(get_current_user)):

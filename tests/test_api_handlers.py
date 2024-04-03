@@ -77,6 +77,13 @@ class TestAPI(unittest.TestCase):
             for data in dummy_user_data:
                 batch.put_item(Item=data)
         
+        # Store the original Redis client get method
+        self.redis_client_get_original = url_handlers.redis_client.get
+        # Mock Redis client methods for cache bypass
+        url_handlers.redis_client.get = lambda key: None  # Simulate cache miss for all keys
+        self.redis_client_exists_original = url_handlers.redis_client.exists
+        url_handlers.redis_client.exists = lambda key: None
+        
         # create dummy regular and admin user credentials        
         self.regular_user = self.simulate_login("regularuser@gmail.com","Password1")
         self.admin_user= self.simulate_login("adminuser@gmail.com","Password2")
@@ -87,6 +94,8 @@ class TestAPI(unittest.TestCase):
         self.urltable.delete()
         self.usertable.delete()
         self.dynamodb = None
+        url_handlers.redis_client.get = self.redis_client_get_original
+        url_handlers.redis_client.exists = self.redis_client_exists_original
                
         
     def test_table_exists(self):
