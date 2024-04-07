@@ -3,9 +3,9 @@ from locust import HttpUser, task, between
 from requests.exceptions import RequestException
 
 class WebsiteUser(HttpUser):
-    wait_time = between(1, 8)
+    wait_time = between(3, 6)
     jwt_token = None
-    short_urls = ["Soijwf09wf0i", "62_I2kencrLe2GP", "adofijwef98w"]
+    short_urls = ["Soijwf09wf0i", "zxmVzqvYj893_i7", "adofijwef98w"]
 
     def on_start(self):
         self.login()
@@ -22,7 +22,7 @@ class WebsiteUser(HttpUser):
         except RequestException as e:
             self.log_error("Login failed", e)
 
-    @task
+    @task(5)
     def load_list_my_urls(self):
         try:
             self.ensure_jwt_token()
@@ -32,7 +32,7 @@ class WebsiteUser(HttpUser):
         except RequestException as e:
             self.log_error("Failed to list URLs", e)
 
-    @task
+    @task(1)
     def load_change_password(self):
         try:
             self.ensure_jwt_token()
@@ -43,7 +43,7 @@ class WebsiteUser(HttpUser):
         except RequestException as e:
             self.log_error("Failed to change password", e)
 
-    @task
+    @task(20)
     def load_lookupURL(self):
         try:
             shorturl = random.choice(self.short_urls)
@@ -52,13 +52,12 @@ class WebsiteUser(HttpUser):
         except RequestException as e:
             self.log_error("Failed to lookup URL", e)
 
-    @task
+    @task(20)
     def test_redirect(self):
         try:
             shorturl = random.choice(self.short_urls)
             response = self.client.get(f"/redirect/{shorturl}")
             response.raise_for_status()  # Raise exception for non-2xx responses
-            print(f"Redirect successful for short URL: {shorturl}")
         except RequestException as e:
             self.log_error(f"Redirect failed for short URL: {shorturl}", e)
 
