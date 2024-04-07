@@ -2,12 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi import HTTPException
 from typing import Optional
-from pydantic import ValidationError
 from pynamodb.exceptions import DoesNotExist
-import logging
-import sys
-import json
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 
@@ -183,7 +178,6 @@ def lookupLongUrl(shorturl: str):
     cached_long_url = redis_client.get(shorturl)
     if cached_long_url:
         # If the long URL is cached, return it
-        logging.info(json.dumps({"long_url": cached_long_url.decode('utf-8')}))
         return {"long_url": cached_long_url.decode('utf-8')}
     
     # Retrieve short URL pair from the database

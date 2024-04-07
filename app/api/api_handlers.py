@@ -1,12 +1,8 @@
 from fastapi import FastAPI
 from apitally.fastapi import ApitallyMiddleware
-import logging
-import sys
 import os
 from dotenv import load_dotenv
 load_dotenv()
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-
 
 from app.api.url_handlers import router as url_router
 from app.api.user_handlers import router as user_router
@@ -25,7 +21,7 @@ app.add_middleware(
     client_id=apitally_client_id,
     env="prod" if os.getenv("PRODUCTION") else "dev"
 )
-logging.info("Working")
+
 populate_cache_from_database(redis_client=redis_client, Urls=Urls)
 
 # Mount routers
