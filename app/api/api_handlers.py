@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from apitally.fastapi import ApitallyMiddleware
 import logging
+import sys
 import os
 from dotenv import load_dotenv
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 from app.api.url_handlers import router as url_router
