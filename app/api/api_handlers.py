@@ -21,7 +21,7 @@ app.add_middleware(
     client_id=apitally_client_id,
     env="prod" if os.getenv("PRODUCTION") else "dev"
 )
-
+print('Working')
 populate_cache_from_database(redis_client=redis_client, Urls=Urls)
 
 # Mount routers
