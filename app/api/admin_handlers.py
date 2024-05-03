@@ -71,4 +71,4 @@ def update_url_limit(
     user.url_limit = new_limit
     user.save()
 
-    return {"message": f"URL limit updated successfully for user {user_email}."}
+    return {"message": f"URL limit updated successfully for user {user_email}." }
